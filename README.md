@@ -1,8 +1,8 @@
-# HV AS3 Battle Damage Numbers
+# HV DDTank Battle Damage Numbers
 
-> **Before publishing:** replace every `YOUR_USERNAME` in this file and in `hv-as3-battle-damage.user.js` with your GitHub username (and the repo name if you rename it). All direct links below depend on it.
+> **Before publishing:** replace every `YOUR_USERNAME` in this file and in `hv-ddtank-battle-damage.user.js` with your GitHub username (and the repo name if you rename it). All direct links below depend on it.
 
-A Tampermonkey/Violentmonkey userscript for [HentaiVerse](https://hentaiverse.org) that reads the battle log and pops classic Flash/AS3-style damage numbers — DDTank-flavored — over monsters and your character: red digits for physical, colored digits per element, a crit backplate, and green healing numbers.
+A Tampermonkey/Violentmonkey userscript for [HentaiVerse](https://hentaiverse.org) that reads the battle log and pops classic Flash/ddtank-style damage numbers — DDTank-flavored — over monsters and your character: red digits for physical, colored digits per element, a crit backplate, and green healing numbers.
 
 ![Preview](assets/preview.gif)
 
@@ -20,13 +20,13 @@ You need a userscript manager: [Tampermonkey](https://www.tampermonkey.net/) or 
 **One-click install (recommended, auto-updates via jsDelivr):**
 
 ```
-https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@main/hv-as3-battle-damage.user.js
+https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/hv-ddtank-battle-damage.user.js
 ```
 
 **Fallback (GitHub raw):**
 
 ```
-https://raw.githubusercontent.com/YOUR_USERNAME/hv-as3-battle-damage/main/hv-as3-battle-damage.user.js
+https://raw.githubusercontent.com/YOUR_USERNAME/hv-ddtank-battle-damage/main/hv-ddtank-battle-damage.user.js
 ```
 
 Open either link with a userscript manager installed and it will offer to install the script. Then open any HentaiVerse battle — numbers appear on their own.
@@ -37,9 +37,9 @@ Once the repo is pushed, these URLs can be hotlinked from forums, signatures and
 
 | Asset | jsDelivr (CDN, cached) | GitHub raw |
 |---|---|---|
-| Userscript (auto-update) | `https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@main/hv-as3-battle-damage.user.js` | `https://raw.githubusercontent.com/YOUR_USERNAME/hv-as3-battle-damage/main/hv-as3-battle-damage.user.js` |
-| Userscript (pinned to a tag, e.g. `v0.7.0`) | `https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@v0.7.0/hv-as3-battle-damage.user.js` | — |
-| Preview GIF | `https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@main/assets/preview.gif` | `https://raw.githubusercontent.com/YOUR_USERNAME/hv-as3-battle-damage/main/assets/preview.gif` |
+| Userscript (auto-update) | `https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/hv-ddtank-battle-damage.user.js` | `https://raw.githubusercontent.com/YOUR_USERNAME/hv-ddtank-battle-damage/main/hv-ddtank-battle-damage.user.js` |
+| Userscript (pinned to a tag, e.g. `v0.7.0`) | `https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@v0.7.0/hv-ddtank-battle-damage.user.js` | — |
+| Preview GIF | `https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/assets/preview.gif` | `https://raw.githubusercontent.com/YOUR_USERNAME/hv-ddtank-battle-damage/main/assets/preview.gif` |
 
 Tips:
 
@@ -51,25 +51,25 @@ Tips:
 Preview image:
 
 ```bbcode
-[img]https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@main/assets/preview.gif[/img]
+[img]https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/assets/preview.gif[/img]
 ```
 
 Install link:
 
 ```bbcode
-[url=https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@main/hv-as3-battle-damage.user.js]Install HV AS3 Battle Damage Numbers (userscript)[/url]
+[url=https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/hv-ddtank-battle-damage.user.js]Install HV ddtank Battle Damage Numbers (userscript)[/url]
 ```
 
 Signature combo (clickable preview that leads to the repo):
 
 ```bbcode
-[url=https://github.com/YOUR_USERNAME/hv-as3-battle-damage][img]https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@main/assets/preview.gif[/img][/url]
+[url=https://github.com/YOUR_USERNAME/hv-ddtank-battle-damage][img]https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/assets/preview.gif[/img][/url]
 ```
 
 Markdown (for forums that support it):
 
 ```markdown
-[![Preview](https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@main/assets/preview.gif)](https://github.com/YOUR_USERNAME/hv-as3-battle-damage)
+[![Preview](https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/assets/preview.gif)](https://github.com/YOUR_USERNAME/hv-ddtank-battle-damage)
 ```
 
 ## What you get
@@ -81,7 +81,7 @@ Markdown (for forums that support it):
 | Red backplate + scale pop | Critical hits |
 | Green digits with `+` icon | Healing on the player |
 
-Animation replicates the original AS3 stepper: rise-and-fade for normal hits, scale-up pop for crits, 24 fps, up to 8-digit values.
+Animation replicates the original ddtank stepper: rise-and-fade for normal hits, scale-up pop for crits, 24 fps, up to 8-digit values.
 
 ## Configuration
 
@@ -132,8 +132,8 @@ Useful members: `mappings`, `parse`, `parseBatch`, `parseHealing`, `parseEvents`
 ## Repository layout
 
 ```
-hv-as3-battle-damage/
-├── hv-as3-battle-damage.user.js   # the userscript (install this)
+hv-ddtank-battle-damage/
+├── hv-ddtank-battle-damage.user.js   # the userscript (install this)
 ├── assets/
 │   └── preview.gif                # README / forum preview image
 ├── README.md
@@ -143,7 +143,7 @@ hv-as3-battle-damage/
 ## Credits
 
 - DOM adapter lineage: JPX 261015b1 and HVMonsterDB 2.1.1 (read-only parsing approach).
-- Damage composition, frame stepping and element mapping replicate the original AS3 implementation; glyphs were extracted from the game's own SWF assets.
+- Damage composition, frame stepping and element mapping replicate the original ddtank implementation; glyphs were extracted from the game's own SWF assets.
 
 ## License
 
