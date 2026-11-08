@@ -41,6 +41,8 @@ Open either link with a userscript manager installed and it will offer to instal
 
 Animation replicates the original ddtank stepper: rise-and-fade for normal hits, scale-up pop for crits, 24 fps, up to 8-digit values.
 
+Multi-hit turns are readable: hits on the same target appear one after another (70 ms apart by default) and each new number is placed to avoid the ones still on screen, stacking below or beside them instead of piling up.
+
 ## Configuration
 
 The script runs out of the box. To tweak it, open the browser console during a battle:
@@ -48,6 +50,9 @@ The script runs out of the box. To tweak it, open the browser console during a b
 ```js
 // Bigger and faster numbers (scale 0.4–2.5, speed 0.1–3)
 unsafeWindow.HVBattleDamage.configure({ scale: 1.4, speed: 1.2 });
+
+// Delay between hits on the same target in ms (0–300, 0 = all at once)
+unsafeWindow.HVBattleDamage.configure({ stagger: 100 });
 
 // Inspect what the module is doing
 unsafeWindow.HVBattleDamage.inspect();

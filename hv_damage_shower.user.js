@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HV AS3 Battle Damage Numbers
 // @namespace    local.hv.battle-damage
-// @version      0.7.0
+// @version      0.8.0
 // @description  Reads the HentaiVerse battle log and pops AS3-style (DDTank-flavored) damage, critical and green healing numbers over monsters and the player. Exposes a read-only API for other battle modules.
 // @author       1415ddfer
 // @match        https://hentaiverse.org/*
@@ -161,7 +161,30 @@ const HVBattleDamageCore = (() => {
     // AS3 returnNum starts all bounds at zero, including transparent leading space.
     const x=Math.min(0,...items.map(i=>i.x)),y=Math.min(0,...items.map(i=>i.y));
     const width=Math.max(0,...items.map(i=>i.x+i.glyph.width))-x,height=Math.max(0,...items.map(i=>i.y+i.glyph.height))-y;
-    return {items:items.map(i=>({...i,x:i.x-x,y:i.y-y})),width,height,mapping};
+    // Visible ink box (texture space), used for collision-aware placement.
+    const left0=Math.min(...items.map(i=>i.x)),top0=Math.min(...items.map(i=>i.y));
+    const bounds={x:left0-x,y:top0-y,width:Math.max(...items.map(i=>i.x+i.glyph.width))-left0,height:Math.max(...items.map(i=>i.y+i.glyph.height))-top0};
+    return {items:items.map(i=>({...i,x:i.x-x,y:i.y-y})),width,height,bounds,mapping};
+  }
+  function overlap(a,b){return Math.max(0,Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x))*Math.max(0,Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y));}
+  // Pick the cheapest offset (prefer below, then sideways) that keeps a new number clear of live ones.
+  function place(rect,occupied,{limitX=Infinity,limitY=Infinity,tolerance=0.15}={}){
+    if(!occupied.length)return {dx:0,dy:0};
+    const stepX=Math.max(8,rect.width*0.6),stepY=Math.max(8,rect.height*0.85),area=Math.max(1,rect.width*rect.height);
+    const candidates=[];
+    for(let j=-4;j<=4;j++)for(let i=-3;i<=3;i++){
+      const dx=i*stepX,dy=j*stepY;if(Math.abs(dx)>limitX || Math.abs(dy)>limitY)continue;
+      candidates.push({dx,dy,cost:(j>0?j:-j*1.5)+Math.abs(i)*1.25});
+    }
+    candidates.sort((a,b)=>a.cost-b.cost);
+    let best=null;
+    for(const c of candidates){
+      const moved={...rect,x:rect.x+c.dx,y:rect.y+c.dy};
+      const worst=Math.max(0,...occupied.map(o=>overlap(moved,o)/Math.max(1,Math.min(area,o.width*o.height))));
+      if(worst<=tolerance)return {dx:c.dx,dy:c.dy};
+      if(!best || worst<best.worst)best={dx:c.dx,dy:c.dy,worst};
+    }
+    return best?{dx:best.dx,dy:best.dy}:{dx:0,dy:0};
   }
   function initial(critical=false){return {critical,x:critical?0:-70,y:critical?0:-20,scale:critical?0.5:1,alpha:0,hold:0,add:true,done:false};}
   function step(state,width,height){
@@ -177,7 +200,13 @@ const HVBattleDamageCore = (() => {
     return s;
   }
   function frameAt(frame,width,height,critical=false){let s=initial(critical);for(let i=0;i<frame && !s.done;i++)s=step(s,width,height);return s;}
-  return Object.freeze({MAX_DAMAGE,mappings,element,normalizeName,parseLog,parseBatch,parseHealing,parseEvents,Cursor,composition,initial,step,frameAt});
+  // Incremental stepper: advancing from a cached state avoids replaying from frame 0 every paint.
+  function advance(cache,frame,width,height,critical=false){
+    if(!cache.state || cache.frame>frame){cache.state=initial(critical);cache.frame=0;}
+    while(cache.frame<frame && !cache.state.done){cache.state=step(cache.state,width,height);cache.frame++;}
+    return cache.state;
+  }
+  return Object.freeze({MAX_DAMAGE,mappings,element,normalizeName,parseLog,parseBatch,parseHealing,parseEvents,Cursor,composition,initial,step,frameAt,advance,place});
 })();
 if(typeof module!=='undefined' && module.exports)module.exports=HVBattleDamageCore;
 
@@ -190,11 +219,15 @@ if(typeof module!=='undefined' && module.exports)module.exports=HVBattleDamageCo
   const C=HVBattleDamageCore,M=HV_BATTLE_DAMAGE_ASSETS.manifest;
   const cursor=new C.Cursor({healing:true}),ids=new WeakMap(),active=[],history=[];
   const defaultPlayer='#hv-ddt-character-battle, #pane_vitals';
-  const options={log:'#pane_log, #textlog',monsters:'#pane_monster, #monsterpane, #battle_right',player:defaultPlayer,scale:1,speed:1};
+  const options={log:'#pane_log, #textlog',monsters:'#pane_monster, #monsterpane, #battle_right',player:defaultPlayer,scale:1,speed:1,stagger:70};
   let serial=0,raf=0,queued=false,stopped=false,pausedAt=null,layer=null,context=null;
   let observer,unmatched=0,played=0,failures=0,subscriberFailures=0;
   const subscribers=new Set();
-  let lease=null,imageReady=false;
+  let lease=null,imageReady=false,dirty=true;
+  // Last scheduled number per target node, used to stagger multi-hit turns.
+  const lastByTarget=new WeakMap();
+  // Look-ahead (frames) used when testing placements, so numbers are compared once visible.
+  const PROBE=3;
   let battleRoot=document.querySelector('#battle_main');
   const image=new Image();
   const ready=new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error('AS3 伤害图集加载失败'));});
@@ -212,8 +245,12 @@ if(typeof module!=='undefined' && module.exports)module.exports=HVBattleDamageCo
       if(node.matches?.('.tls') || node.querySelector?.('td.tls') || node.getAttribute('data-hv-source-class')==='tls'){
         current=false;result.push({id:ids.get(node)+':tls',text:'\u0000tls',active:false});
       }
-      const copy=node.cloneNode(true);for(const br of copy.querySelectorAll('br'))br.replaceWith(document.createTextNode('\n'));
-      const text=node.getAttribute('data-hv-source-text') ?? node.getAttribute('data-hv-original-text') ?? copy.textContent ?? '';
+      let text=node.getAttribute?.('data-hv-source-text') ?? node.getAttribute?.('data-hv-original-text') ?? null;
+      if(text==null){
+        // Only clone rows that need <br> → newline conversion; plain rows read textContent directly.
+        if(node.querySelector?.('br')){const copy=node.cloneNode(true);for(const br of copy.querySelectorAll('br'))br.replaceWith(document.createTextNode('\n'));text=copy.textContent ?? '';}
+        else text=node.textContent ?? '';
+      }
       for(const [i,line] of text.split(/[\r\n]+/).entries())if(line.trim())result.push({id:ids.get(node)+':'+text+':'+i,text:line,active:current});
       if(result.length>=400)break;
     }
@@ -247,26 +284,64 @@ if(typeof module!=='undefined' && module.exports)module.exports=HVBattleDamageCo
     return canvas;
   }
   function requestDraw(){if(!raf && !stopped)raf=requestAnimationFrame(draw);}
+  // Ink rect of an entry relative to its target's centre, in CSS px.
+  function rectOf(a,state,dx=a.dx,dy=a.dy){
+    const k=a.scale*state.scale,b=a.bounds;
+    return {x:state.x*a.scale+dx+b.x*k,y:state.y*a.scale+dy+b.y*k,width:b.width*k,height:b.height*k};
+  }
+  function placeEntry(a,age,box){
+    const size=[a.texture.width,a.texture.height];
+    const own=rectOf(a,C.frameAt(Math.min(80,age+PROBE),...size,a.event.critical),0,0);
+    const occupied=[];
+    for(const o of active){
+      if(o===a || !o.placed || o.target!==a.target || o.age==null)continue;
+      const st=C.frameAt(Math.min(80,o.age+PROBE),o.texture.width,o.texture.height,o.event.critical);
+      if(!st.done)occupied.push(rectOf(o,st));
+    }
+    const off=C.place(own,occupied,{limitX:Math.max(40,box.width/2),limitY:Math.max(48,box.height/2+24)});
+    a.dx=off.dx;a.dy=off.dy;a.placed=true;
+  }
   function draw(now){
     raf=0;if(stopped || !context)return;
     const canvas=context.canvas,dpr=Math.min(devicePixelRatio || 1,2),width=innerWidth,height=innerHeight;
-    if(canvas.width!==Math.round(width*dpr) || canvas.height!==Math.round(height*dpr)){canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);}
-    context.setTransform(dpr,0,0,dpr,0,0);context.clearRect(0,0,width,height);
-    const time=pausedAt ?? now;
-    let moving=false;
-    for(let i=active.length-1;i>=0;i--){
-      const a=active[i],age=a.frame ?? Math.floor((time-a.started)*M.fps/1000*a.speed);
-      const state=C.frameAt(Math.min(80,age),a.texture.width,a.texture.height,a.event.critical);
-      const target=targetFor(a.event.target),box=target?.getBoundingClientRect();
-      if(!target || target!==a.target || !target.isConnected || state.done || !box?.width || !box.height){active.splice(i,1);continue;}
-      const scale=Math.min(a.scale*state.scale,(width-4)/a.texture.width,(height-4)/a.texture.height),w=a.texture.width*scale,h=a.texture.height*scale;
-      const nativeX=box.left+box.width/2+state.x*a.scale+a.lane*12;
-      const nativeY=box.top+box.height/2+state.y*a.scale-a.lane*18;
-      const x=Math.max(2,Math.min(width-w-2,nativeX)),y=Math.max(2,Math.min(height-h-2,nativeY));
-      context.globalAlpha=state.alpha;context.drawImage(a.texture,x,y,w,h);context.globalAlpha=1;
-      if(a.frame==null)moving=true;
+    if(canvas.width!==Math.round(width*dpr) || canvas.height!==Math.round(height*dpr)){canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);dirty=true;}
+    const time=pausedAt ?? now,boxes=new Map();
+    let pending=false,changed=dirty,kept=0;dirty=false;
+    for(let i=0;i<active.length;i++){
+      const a=active[i];a.box=null;
+      const age=a.frame ?? Math.floor((time-a.started)*M.fps/1000*a.speed);
+      if(age<0){active[kept++]=a;pending=true;continue;}  // staggered, not started yet
+      if(!a.target.isConnected){
+        // The pane was re-rendered: follow the replacement node once instead of re-querying every frame.
+        const next=targetFor(a.event.target);changed=true;
+        if(!next)continue;
+        a.target=next;
+      }
+      let box=boxes.get(a.target);if(!box){box=a.target.getBoundingClientRect();boxes.set(a.target,box);}
+      if(!box.width || !box.height){changed=true;continue;}
+      const state=C.advance(a.anim,Math.min(80,age),a.texture.width,a.texture.height,a.event.critical);
+      if(state.done){changed=true;continue;}
+      if(!a.placed){placeEntry(a,age,box);changed=true;}
+      if(a.age!==age){a.age=age;changed=true;}
+      a.box=box;active[kept++]=a;
+      if(a.frame==null)pending=true;
     }
-    if(moving && pausedAt==null)requestDraw();
+    active.length=kept;
+    // The AS3 stepper runs at 24 fps; skip repaints when no frame advanced and nothing moved.
+    if(changed){
+      context.setTransform(dpr,0,0,dpr,0,0);context.clearRect(0,0,width,height);
+      for(const a of active){
+        if(!a.box)continue;
+        const state=a.anim.state,box=a.box;
+        const scale=Math.min(a.scale*state.scale,(width-4)/a.texture.width,(height-4)/a.texture.height),w=a.texture.width*scale,h=a.texture.height*scale;
+        const nativeX=box.left+box.width/2+state.x*a.scale+a.dx;
+        const nativeY=box.top+box.height/2+state.y*a.scale+a.dy;
+        const x=Math.max(2,Math.min(width-w-2,nativeX)),y=Math.max(2,Math.min(height-h-2,nativeY));
+        context.globalAlpha=state.alpha;context.drawImage(a.texture,x,y,w,h);
+      }
+      context.globalAlpha=1;
+    }
+    if(pending && pausedAt==null)requestDraw();
     if(!active.length && layer){layer.remove();layer=null;context=null;}
   }
   function emit(event,frame=null){
@@ -281,8 +356,15 @@ if(typeof module!=='undefined' && module.exports)module.exports=HVBattleDamageCo
     if(!target){unmatched++;record(normalized,'unmatched');return false;}
     ensureLayer();
     if(active.length>=64)active.shift();
-    const lane=active.filter(a=>C.normalizeName(a.event.target)===C.normalizeName(normalized.target)).length%4;
-    active.push({event:normalized,target,texture:texture(composed),started:pausedAt ?? performance.now(),speed:options.speed,scale:options.scale,lane,frame});
+    const now=pausedAt ?? performance.now();
+    let started=now;
+    if(frame==null && options.stagger>0){
+      // Multi-hit turns: space numbers on the same target, capped so a long queue never lags far behind.
+      const prev=lastByTarget.get(target),gap=options.stagger/options.speed;
+      if(prev && active.includes(prev))started=Math.min(now+gap*12,Math.max(now,prev.started+gap));
+    }
+    const entry={event:normalized,target,texture:texture(composed),bounds:composed.bounds,started,speed:options.speed,scale:options.scale,frame,anim:{},dx:0,dy:0,placed:false,age:null,box:null};
+    active.push(entry);lastByTarget.set(target,entry);dirty=true;
     played++;record(normalized,'played');requestDraw();
     if(frame==null && !healing)for(const subscriber of [...subscribers])try{const result=subscriber({...normalized});if(result && typeof result.then==='function')Promise.resolve(result).catch(()=>subscriberFailures++);}catch{subscriberFailures++;}
     return true;
@@ -295,6 +377,7 @@ if(typeof module!=='undefined' && module.exports)module.exports=HVBattleDamageCo
     for(const event of cursor.consume(rows()))try{emit(event);}catch(error){failures++;record(event,error.message);}
   }
   function queue(records){
+    if(active.length)dirty=true;  // layout may have shifted under live numbers
     if(stopped || lease || queued)return;
     if(records && !records.some(r=>{
       const target=r.target.nodeType===1?r.target:r.target.parentElement;
@@ -304,13 +387,14 @@ if(typeof module!=='undefined' && module.exports)module.exports=HVBattleDamageCo
     }))return;
     queued=true;queueMicrotask(scan);
   }
-  function redraw(){if(active.length)requestDraw();}
+  function redraw(){if(active.length){dirty=true;requestDraw();}}
   function visibility(){if(document.hidden){active.length=0;if(context)requestDraw();}}
   function clear(){active.length=0;document.querySelectorAll('#hv-battle-damage-layer').forEach(node=>node.remove());layer=null;context=null;}
   function configure(patch){
     const next={...options,...patch};
     if(!Number.isFinite(next.scale) || next.scale<0.4 || next.scale>2.5)throw new RangeError('scale: 0.4–2.5');
     if(!Number.isFinite(next.speed) || next.speed<0.1 || next.speed>3)throw new RangeError('speed: 0.1–3');
+    if(!Number.isFinite(next.stagger) || next.stagger<0 || next.stagger>300)throw new RangeError('stagger: 0–300 ms');
     document.querySelector(next.log);document.querySelector(next.monsters);document.querySelector(next.player);
     if(next.log!==options.log){cursor.reset();Object.assign(options,next);cursor.consume(rows());}else Object.assign(options,next);
     return {...options};
@@ -343,7 +427,7 @@ if(typeof module!=='undefined' && module.exports)module.exports=HVBattleDamageCo
     const token=Object.freeze({owner,assets,release(){if(lease!==token)return false;lease=null;attachNative();return true;}});
     lease=token;detachNative();return token;
   }
-  const api={version:'0.7.0',ready,
+  const api={version:'0.8.0',ready,
     mappings:C.mappings,parse:C.parseLog,parseBatch:C.parseBatch,parseHealing:C.parseHealing,parseEvents:C.parseEvents,configure,assets,takeover,
     subscribe(listener){if(typeof listener!=='function')throw new TypeError('伤害订阅者必须为函数');subscribers.add(listener);return ()=>subscribers.delete(listener);},
     async emit(event){await ready;return emit(event);},
