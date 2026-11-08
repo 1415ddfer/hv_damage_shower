@@ -18,13 +18,13 @@ You need a userscript manager: [Tampermonkey](https://www.tampermonkey.net/) or 
 **One-click install (recommended, auto-updates via jsDelivr):**
 
 ```
-https://cdn.jsdelivr.net/gh/1415ddfer/hv-ddtank-battle-damage@main/hv-ddtank-battle-damage.user.js
+https://cdn.jsdelivr.net/gh/1415ddfer/hv_damage_shower@main/hv_damage_shower.user.js
 ```
 
 **Fallback (GitHub raw):**
 
 ```
-https://raw.githubusercontent.com/1415ddfer/hv-ddtank-battle-damage/main/hv-ddtank-battle-damage.user.js
+https://raw.githubusercontent.com/1415ddfer/hv_damage_shower/main/hv_damage_shower.user.js
 ```
 
 Open either link with a userscript manager installed and it will offer to install the script. Then open any HentaiVerse battle — numbers appear on their own.
@@ -90,8 +90,8 @@ Useful members: `mappings`, `parse`, `parseBatch`, `parseHealing`, `parseEvents`
 ## Repository layout
 
 ```
-hv-ddtank-battle-damage/
-├── hv-ddtank-battle-damage.user.js   # the userscript (install this)
+hv_damage_shower/
+├── hv_damage_shower.user.js   # the userscript (install this)
 ├── assets/
 │   └── preview.gif                # README / forum preview image
 ├── README.md

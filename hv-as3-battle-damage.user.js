@@ -10,10 +10,10 @@
 // @run-at       document-idle
 // @noframes
 // @license      MIT
-// @homepageURL  https://github.com/1415ddfer/hv-as3-battle-damage
-// @supportURL   https://github.com/1415ddfer/hv-as3-battle-damage/issues
-// @downloadURL  https://cdn.jsdelivr.net/gh/1415ddfer/hv-as3-battle-damage@main/hv-as3-battle-damage.user.js
-// @updateURL    https://cdn.jsdelivr.net/gh/1415ddfer/hv-as3-battle-damage@main/hv-as3-battle-damage.user.js
+// @homepageURL  https://github.com/1415ddfer/hv_damage_shower
+// @supportURL   https://github.com/1415ddfer/hv_damage_shower/issues
+// @downloadURL  https://cdn.jsdelivr.net/gh/1415ddfer/hv_damage_shower@main/hv_damage_shower.user.js
+// @updateURL    https://cdn.jsdelivr.net/gh/1415ddfer/hv_damage_shower@main/hv_damage_shower.user.js
 // ==/UserScript==
 (() => {
 'use strict';
