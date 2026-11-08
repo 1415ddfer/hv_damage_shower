@@ -3,17 +3,17 @@
 // @namespace    local.hv.battle-damage
 // @version      0.7.0
 // @description  Reads the HentaiVerse battle log and pops AS3-style (DDTank-flavored) damage, critical and green healing numbers over monsters and the player. Exposes a read-only API for other battle modules.
-// @author       you
+// @author       1415ddfer
 // @match        https://hentaiverse.org/*
 // @match        https://*.hentaiverse.org/*
 // @grant        unsafeWindow
 // @run-at       document-idle
 // @noframes
 // @license      MIT
-// @homepageURL  https://github.com/YOUR_USERNAME/hv-as3-battle-damage
-// @supportURL   https://github.com/YOUR_USERNAME/hv-as3-battle-damage/issues
-// @downloadURL  https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@main/hv-as3-battle-damage.user.js
-// @updateURL    https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-as3-battle-damage@main/hv-as3-battle-damage.user.js
+// @homepageURL  https://github.com/1415ddfer/hv-as3-battle-damage
+// @supportURL   https://github.com/1415ddfer/hv-as3-battle-damage/issues
+// @downloadURL  https://cdn.jsdelivr.net/gh/1415ddfer/hv-as3-battle-damage@main/hv-as3-battle-damage.user.js
+// @updateURL    https://cdn.jsdelivr.net/gh/1415ddfer/hv-as3-battle-damage@main/hv-as3-battle-damage.user.js
 // ==/UserScript==
 (() => {
 'use strict';
