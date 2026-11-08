@@ -31,46 +31,6 @@ https://raw.githubusercontent.com/YOUR_USERNAME/hv-ddtank-battle-damage/main/hv-
 
 Open either link with a userscript manager installed and it will offer to install the script. Then open any HentaiVerse battle — numbers appear on their own.
 
-## Direct links (hotlink / 图床)
-
-Once the repo is pushed, these URLs can be hotlinked from forums, signatures and posts.
-
-| Asset | jsDelivr (CDN, cached) | GitHub raw |
-|---|---|---|
-| Userscript (auto-update) | `https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/hv-ddtank-battle-damage.user.js` | `https://raw.githubusercontent.com/YOUR_USERNAME/hv-ddtank-battle-damage/main/hv-ddtank-battle-damage.user.js` |
-| Userscript (pinned to a tag, e.g. `v0.7.0`) | `https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@v0.7.0/hv-ddtank-battle-damage.user.js` | — |
-| Preview GIF | `https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/assets/preview.gif` | `https://raw.githubusercontent.com/YOUR_USERNAME/hv-ddtank-battle-damage/main/assets/preview.gif` |
-
-Tips:
-
-- jsDelivr caches aggressively; push a **git tag** (e.g. `v0.7.0`) and link the tag for a stable version, or use `@main` for always-latest.
-- jsDelivr serves files up to ~20 MB; both files here are far below that.
-
-### Forum embed snippets (BBCode)
-
-Preview image:
-
-```bbcode
-[img]https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/assets/preview.gif[/img]
-```
-
-Install link:
-
-```bbcode
-[url=https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/hv-ddtank-battle-damage.user.js]Install HV ddtank Battle Damage Numbers (userscript)[/url]
-```
-
-Signature combo (clickable preview that leads to the repo):
-
-```bbcode
-[url=https://github.com/YOUR_USERNAME/hv-ddtank-battle-damage][img]https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/assets/preview.gif[/img][/url]
-```
-
-Markdown (for forums that support it):
-
-```markdown
-[![Preview](https://cdn.jsdelivr.net/gh/YOUR_USERNAME/hv-ddtank-battle-damage@main/assets/preview.gif)](https://github.com/YOUR_USERNAME/hv-ddtank-battle-damage)
-```
 
 ## What you get
 
