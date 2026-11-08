@@ -1,7 +1,5 @@
 # HV DDTank Battle Damage Numbers
 
-> **Before publishing:** replace every `YOUR_USERNAME` in this file and in `hv-ddtank-battle-damage.user.js` with your GitHub username (and the repo name if you rename it). All direct links below depend on it.
-
 A Tampermonkey/Violentmonkey userscript for [HentaiVerse](https://hentaiverse.org) that reads the battle log and pops classic Flash/ddtank-style damage numbers — DDTank-flavored — over monsters and your character: red digits for physical, colored digits per element, a crit backplate, and green healing numbers.
 
 ![Preview](assets/preview.gif)
